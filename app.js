@@ -13,10 +13,9 @@ const cors = require('cors');
 
 // const { loginController, logOutController } = require('./controllers/login.js');
 // const { SignInController } = require('./controllers/signIn.js');
-// const { questions } = require('./modals/questions.js');
 const { addQuesPostController } = require('./controllers/addQuestion.js');
 const bodyParser = require('body-parser');
-// const { questionRenderController } = require('./controllers/question.js');
+const { questionRenderController } = require('./controllers/question_render.js');
 const { quesSubmitController } = require('./controllers/judge.js');
 // const { makeConnection } = require('./controllers/socketController.js');
 
@@ -35,9 +34,7 @@ const { quesSubmitController } = require('./controllers/judge.js');
 app.use(bodyParser.json());
 // const contest = mongoose.model('contest', Contest);
 
-// app.set('view engine', 'ejs');
-// app.use(body1.urlencoded({ extended: false }));
-// app.use(express.static(path.join(__dirname, 'Public')));
+app.use(express.static(path.join(__dirname, 'Public')));
 // app.use(session({ secret: "Key", resave: false, saveUninitialized: false }));
 // app.use(multer({ storage: fileStorage }).single('codefile'));
 // app.use(cors());
@@ -61,37 +58,10 @@ app.use(bodyParser.json());
 //     })
 // })
 
-// app.post('/new_contest', (req, res) => {
-//     var val = req.body;
-//     val.q1_status = '00';
-//     val.q2_status = '00';
-//     val.q3_status = '00';
-//     const new_contest = new contest(val);
-//     new_contest.save().then(result => {
-//         res.redirect('/');
-//     })
-// })
-
-// app.use('/practice', (req, res) => {
-//     questions.find().then(result => {
-//         res.render('practice.ejs', { arr: result });
-//     })
-// });
-
-// app.use('/addQues', (req, res) => {
-//     res.render('add-ques.ejs');
-// });
 
 app.post('/postques', addQuesPostController);
 app.use('/subques', quesSubmitController);
-
-// app.use('/addQuesPost', addQuesPostController);
-
-// app.use('/quesSubmit/:quesname', questionRenderController);
-
-// app.use('/signReq', (req, res) => {
-//     res.render('signIn.ejs');
-// });
+app.use('/ques/:quesname', questionRenderController);
 
 // app.use('/signin', SignInController);
 
