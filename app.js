@@ -25,6 +25,9 @@ app.use(express.static(path.join(__dirname, 'Public')));
 app.use(session({ secret: "Key", resave: false, saveUninitialized: false }));
 // app.use(cors());
 
+app.get("/rat", (req, res) => {
+    res.json({ rat: "Hello" });
+})
 
 app.post('/postques', addQuesPostController);
 app.use('/subques', quesSubmitController);
@@ -44,6 +47,6 @@ app.use('/', (req, res) => {
 
 mongoose.connect('mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide').then(result => {
     console.log("Connected");
-    const server = app.listen(3000);
+    const server = app.listen(5000);
     // makeConnection(server);
 })
