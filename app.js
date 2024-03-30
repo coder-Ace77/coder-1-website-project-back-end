@@ -28,7 +28,7 @@ app.use(bodyParser.json());
 
 app.use(express.static(path.join(__dirname, "Public")));
 app.use(session({ secret: "Key", resave: false, saveUninitialized: false }));
-// app.use(cors());
+app.use(cors());
 
 app.get("/rat", (req, res) => {
   console.log("BACKED RAT INVOKED");

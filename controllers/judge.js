@@ -38,6 +38,7 @@ const validate_by_code = (test_input, test_output, output_path, input, validator
 exports.quesSubmitController = (req, res) => {
     const filename = req.body.user_name + '_' + req.body.ques_name + '.' + req.body.lang;
     const ques_name = req.body.ques_name;
+    console.log(req.body);
     questions.findOne({ ques_name: ques_name }).then(result => {
         if (result == null) {
             res.json({ status: "Question not found" });
