@@ -1,28 +1,26 @@
 const { questions } = require('../modals/question');
 
-exports.addQuesPostController = (req, res) => {
-
-    const new_ques = new questions({
-        ques_name: req.body.ques_name,
-        problem_statement: req.body.problem_statement,
-        input_format: req.body.input_format,
-        output_format: req.body.output_format,
-        sample_tests_count: req.body.sample_tests_count,
-        sample_input: req.body.sample_input,
-        sample_output: req.body.sample_output,
-        validate_by_code: req.body.validate_by_code,
-        test_cases_count: req.body.test_cases_count,
-        test_case_input: req.body.test_case_input,
-        test_case_output: req.body.test_case_output,
-        code: req.body.code,
-        constraints: req.body.constraints,
-        difficulty: req.body.difficulty,
-        tags: req.body.tags,
+const preProcessing = (new_ques)=>{
+    new_ques.tags = String(new_ques.tags).split(',').map(tag => tag.trim());
+    new_ques.testCases = new_ques.testCases.map(testCase => {
+        return {
+            input: testCase.input.trim(),
+            output: testCase.output.trim()
+        };
     });
+    return new_ques;
+}
+
+
+exports.addquestion=(req,res)=>{
+    console.log(req.body);
+    var new_ques = new questions({...req.body, submissionCount: 0});
+    new_ques = preProcessing(new_ques);
     new_ques.save().then((result) => {
-        res.json({ message: "Question added", code: 100 });
+        res.json({ message: "Question added", success: true, code: 200});
+        console.log("Question added");
     }).catch(err => {
-        res.json({ message: err, code: 200 });
+        res.json({ message: err, success: false, code: 500});
+        console.error(err);
     });
-
 };

@@ -1,8 +1,8 @@
 const { questions } = require('../modals/question');
 
 exports.questionRenderController = (req, res) => {
-    const ques_name = req.params.quesname;
-    questions.findOne({ ques_name: ques_name }).then(result => {
+    const quesname = req.params.quesname;
+    questions.findOne({name:quesname}).then(result => {
         res.json(result);
     })
 }

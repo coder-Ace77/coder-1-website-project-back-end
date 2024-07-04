@@ -13,16 +13,16 @@ const cors = require("cors");
 
 app.use(cors());
 
-const { loginController, logOutController } = require("./controllers/login.js");
-const { SignInController } = require("./controllers/signIn.js");
-const { addQuesPostController } = require("./controllers/addQuestion.js");
-const bodyParser = require("body-parser");
-const {
-  questionRenderController,
-} = require("./controllers/question_render.js");
-const { quesSubmitController } = require("./controllers/judge.js");
-const { countReset } = require("console");
-// const { makeConnection } = require('./controllers/socketController.js');
+const controllers = {};
+
+const bodyParser = require('body-parser');
+const { loginController, logOutController } = require('./controllers/login.js');
+const { SignInController } = require('./controllers/signIn.js');
+controllers.addquestion=require('./controllers/addQuestion.js').addquestion;
+controllers.questionRenderController = require('./controllers/question_render.js').questionRenderController;
+controllers.quesSubmitController=require('./controllers/judge.js').quesSubmitController;
+controllers.customJudge= require('./controllers/testCaseRunner.js').customJudge;
+const { questions } = require('./modals/question');
 
 app.use(bodyParser.json());
 
@@ -31,20 +31,31 @@ app.use(session({ secret: "Key", resave: false, saveUninitialized: false }));
 app.use(cors());
 
 app.get("/rat", (req, res) => {
-  console.log("BACKED RAT INVOKED");
-  res.send("rat");
-  //   res.json({ rat: "Hello" });
+    res.json({ rat: "Hello" });
 });
-
-app.post("/postques", addQuesPostController);
-app.use("/subques", quesSubmitController);
-app.use("/ques/:quesname", questionRenderController);
+app.post('/addquestion', controllers.addquestion);
+app.use('/submit', controllers.quesSubmitController);
+app.use('/ques/:quesname', controllers.questionRenderController);
+app.use('/testcase', controllers.customJudge);
 
 app.post("/signin", SignInController);
 
 app.post("/login", loginController);
 
-app.use("/logout", logOutController);
+app.use('/logout', logOutController);
+
+app.get('/questionlist', async (req, res) => {
+    try {
+        questions.find().then(
+            result => {
+                res.json(result);
+            }
+        );
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 app.use("/", (req, res) => {
   const filePath = path.join("public", "build", "index.html");
@@ -59,5 +70,4 @@ mongoose
   .then((result) => {
     console.log("Connected");
     const server = app.listen(5000);
-    // makeConnection(server);
-  });
+})
