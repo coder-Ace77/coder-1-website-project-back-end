@@ -6,6 +6,10 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const cookieParser = require('cookie-parser');
+
+
+
 
 const { loginController, logOutController } = require("./controllers/login.js");
 const { SignInController } = require("./controllers/signIn.js");
@@ -28,7 +32,8 @@ const store = new MongoDBStore({
 store.on("error", function (error) {
   console.log(error);
 });
-
+app.use(cookieParser());
+            
 app.use(
   session({
     secret: "yourSecretKey",
