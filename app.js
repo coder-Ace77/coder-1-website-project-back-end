@@ -7,93 +7,100 @@ const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
 
-const { loginController, logOutController } = require('./controllers/login.js');
-const { SignInController } = require('./controllers/signIn.js');
-const { questions } = require('./modals/question');
+const { loginController, logOutController } = require("./controllers/login.js");
+const { SignInController } = require("./controllers/signIn.js");
+const { questions } = require("./models/question");
 
 const app = express();
 
-app.use(cors({
-    origin: 'http://localhost:3000', 
-    credentials: true 
-}));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 
 const store = new MongoDBStore({
-    uri: "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide",
-    collection: "sessions",
+  uri: "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide",
+  collection: "sessions",
 });
 
-store.on('error', function (error) {
-    console.log(error);
+store.on("error", function (error) {
+  console.log(error);
 });
 
 app.use(
-    session({
-        secret: 'yourSecretKey',
-        resave: false,
-        saveUninitialized: false,
-        store: store,
-        cookie: {
-            maxAge: 1000 * 60 * 60 * 24 * 7,
-        },
-    })
+  session({
+    secret: "yourSecretKey",
+    resave: false,
+    saveUninitialized: false,
+    store: store,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
+  })
 );
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "Public")));
 
 app.use((req, res, next) => {
-    console.log('Session data before handling request:', req.session);
-    next();
+  console.log("Session data before handling request:", req.session);
+  next();
 });
 
 const controllers = {};
-controllers.addquestion = require('./controllers/addQuestion.js').addquestion;
-controllers.questionRenderController = require('./controllers/question_render.js').questionRenderController;
-controllers.quesSubmitController = require('./controllers/judge.js').quesSubmitController;
-controllers.customJudge = require('./controllers/testCaseRunner.js').customJudge;
+controllers.addquestion = require("./controllers/addQuestion.js").addquestion;
+controllers.questionRenderController =
+  require("./controllers/question_render.js").questionRenderController;
+controllers.quesSubmitController =
+  require("./controllers/judge.js").quesSubmitController;
+controllers.customJudge =
+  require("./controllers/testCaseRunner.js").customJudge;
 
-app.post('/addquestion', controllers.addquestion);
-app.use('/submit', controllers.quesSubmitController);
-app.use('/ques/:quesname', controllers.questionRenderController);
-app.use('/testcase', controllers.customJudge);
+app.post("/addquestion", controllers.addquestion);
+app.use("/submit", controllers.quesSubmitController);
+app.use("/ques/:quesname", controllers.questionRenderController);
+app.use("/testcase", controllers.customJudge);
 app.post("/signin", SignInController);
 app.post("/login", loginController);
-app.use('/logout', logOutController);
+app.use("/logout", logOutController);
 
-app.get('/checklogin', (req, res) => {
-    console.log('Session data:', req.session);
-    if (req.session.isloggedin) {
-        res.json({ isLoggedIn: true, username: req.session.user.username });
-    } else {
-        res.json({ isLoggedIn: false });
-    }
+app.get("/checklogin", (req, res) => {
+  console.log("Session data:", req.session);
+  if (req.session.isloggedin) {
+    res.json({ isLoggedIn: true, username: req.session.user.username });
+  } else {
+    res.json({ isLoggedIn: false });
+  }
 });
 
-app.get('/questionlist', async (req, res) => {
-    try {
-        const result = await questions.find();
-        res.json(result);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
+app.get("/questionlist", async (req, res) => {
+  try {
+    const result = await questions.find();
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 app.use("/", (req, res) => {
-    const filePath = path.join("public", "build", "index.html");
-    const absolutePath = path.resolve(__dirname, filePath);
-    res.sendFile(absolutePath);
+  const filePath = path.join("public", "build", "index.html");
+  const absolutePath = path.resolve(__dirname, filePath);
+  res.sendFile(absolutePath);
 });
 
 mongoose
-    .connect("mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide")
-    .then(() => {
-        console.log("Connected to MongoDB");
-        app.listen(5000, () => {
-            console.log("Server is running on port 5000");
-        });
-    })
-    .catch(err => {
-        console.error("MongoDB connection error:", err);
+  .connect(
+    "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide"
+  )
+  .then(() => {
+    console.log("Connected to MongoDB");
+    app.listen(5000, () => {
+      console.log("Server is running on port 5000");
     });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+  });
