@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 exports.loginController = (req, res) => {
   const id = req.body.username;
   const pass = req.body.password;
-  console.log(id);
 
   user
     .findOne({ user: id })
@@ -17,7 +16,6 @@ exports.loginController = (req, res) => {
         .compare(pass, result.password)
         .then((isMatch) => {
           if (isMatch) {
-            console.log("Logged in", result);
             req.session.isLoggedIn = true;
             req.session.user = result;
             req.session.save((err) => {
@@ -27,6 +25,7 @@ exports.loginController = (req, res) => {
                   message: "Internal server error",
                 });
               }
+              console.log("This is the req session");
               console.log(req.session);
               res.json({ code: 200, message: "Successfully logged in." });
             });

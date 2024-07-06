@@ -6,34 +6,20 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
-const cookieParser = require('cookie-parser');
-
-
-
+const cookieParser = require("cookie-parser");
 
 const { loginController, logOutController } = require("./controllers/login.js");
 const { SignInController } = require("./controllers/signIn.js");
 const { questions } = require("./models/question");
 
 const app = express();
-
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
-
+app.use(express.json());
 const store = new MongoDBStore({
   uri: "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide",
   collection: "sessions",
 });
-
-store.on("error", function (error) {
-  console.log(error);
-});
 app.use(cookieParser());
-            
+
 app.use(
   session({
     secret: "yourSecretKey",
@@ -46,11 +32,22 @@ app.use(
   })
 );
 
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
+
+store.on("error", function (error) {
+  console.log(error);
+});
+
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "Public")));
 
 app.use((req, res, next) => {
-  console.log("Session data before handling request:", req.session);
+  // console.log("Session data before handling request:", req.session);
   next();
 });
 
@@ -72,12 +69,27 @@ app.post("/login", loginController);
 app.use("/logout", logOutController);
 
 app.get("/checklogin", (req, res) => {
-  console.log("Session data:", req.session);
-  if (req.session.isloggedin) {
-    res.json({ isLoggedIn: true, username: req.session.user.username });
+  console.log("req Session: ", req.session);
+  console.log("req session ID: ", req.session.id);
+  if (req.session.isLoggedIn) {
+    // res.json({ isLoggedIn: true, username: req.session.user.username });
+    res.json({ isLoggedIn: true });
   } else {
     res.json({ isLoggedIn: false });
   }
+});
+
+app.get("/", (req, res) => {
+  console.log(req.session);
+  console.log(req.session.id);
+  console.log("API is working.");
+  if (!req.session.isLoggedIn) {
+    req.session.isLoggedIn = true;
+  }
+  res.send({
+    status: true,
+    msg: "API is working",
+  });
 });
 
 app.get("/questionlist", async (req, res) => {
