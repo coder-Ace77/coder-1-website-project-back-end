@@ -16,19 +16,11 @@ exports.loginController = (req, res) => {
         .compare(pass, result.password)
         .then((isMatch) => {
           if (isMatch) {
-            req.session.isLoggedIn = true;
+            if (!req.session.isLoggedIn) {
+              req.session.isLoggedIn = true;
+            }
             req.session.user = result;
-            req.session.save((err) => {
-              if (err) {
-                return res.json({
-                  code: 500,
-                  message: "Internal server error",
-                });
-              }
-              console.log("This is the req session");
-              console.log(req.session);
-              res.json({ code: 200, message: "Successfully logged in." });
-            });
+            res.json({ code: 200, message: "Successfully logged in." });
           } else {
             res.json({ code: 404, message: "Wrong ID or password." });
           }

@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
-const cookieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
 
 const { loginController, logOutController } = require("./controllers/login.js");
 const { SignInController } = require("./controllers/signIn.js");
@@ -18,7 +18,7 @@ const store = new MongoDBStore({
   uri: "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide",
   collection: "sessions",
 });
-app.use(cookieParser());
+// app.use(cookieParser());
 
 app.use(
   session({
@@ -72,8 +72,8 @@ app.get("/checklogin", (req, res) => {
   console.log("req Session: ", req.session);
   console.log("req session ID: ", req.session.id);
   if (req.session.isLoggedIn) {
-    // res.json({ isLoggedIn: true, username: req.session.user.username });
-    res.json({ isLoggedIn: true });
+    res.json({ isLoggedIn: true, username: req.session.user.username });
+    // res.json({ isLoggedIn: true });
   } else {
     res.json({ isLoggedIn: false });
   }
@@ -83,9 +83,9 @@ app.get("/", (req, res) => {
   console.log(req.session);
   console.log(req.session.id);
   console.log("API is working.");
-  if (!req.session.isLoggedIn) {
-    req.session.isLoggedIn = true;
-  }
+  // if (!req.session.isLoggedIn) {
+  //   req.session.isLoggedIn = true;
+  // }
   res.send({
     status: true,
     msg: "API is working",
