@@ -51,7 +51,7 @@ exports.logOutController = (req, res) => {
 
 exports.checkLoginController = (req, res) => {
   if (req.session.isLoggedIn) {
-    res.json({ isLoggedIn: true, username: req.session.user.username });
+    res.json({ isLoggedIn: true, username: req.session.user.user });
   } else {
     res.json({ isLoggedIn: false });
   }
