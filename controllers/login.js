@@ -40,18 +40,20 @@ exports.loginController = (req, res) => {
 
 exports.logOutController = (req, res) => {
   req.session.destroy((err) => {
+    console.log("Session destroyed");
     if (err) {
       return res
         .status(500)
         .json({ code: 500, message: "Internal server error" });
     }
+    console.log("Removed session");
     res.json({ code: 200, message: "Successfully logged out" });
   });
 };
 
 exports.checkLoginController = (req, res) => {
   if (req.session.isLoggedIn) {
-    res.json({ isLoggedIn: true, username: req.session.user.user });
+    res.json({ isLoggedIn: true, username: req.session.user.user , user: req.session.user});
   } else {
     res.json({ isLoggedIn: false });
   }

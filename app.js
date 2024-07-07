@@ -7,7 +7,7 @@ const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
 
-const { loginController, logOutController } = require("./controllers/login.js");
+const { loginController, logOutController, checkLoginController } = require("./controllers/login.js");
 const { SignInController } = require("./controllers/signIn.js");
 const { questions } = require("./models/question");
 
@@ -17,7 +17,6 @@ const store = new MongoDBStore({
   uri: "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide",
   collection: "sessions",
 });
-// app.use(cookieParser());
 
 app.use(
   session({
@@ -46,7 +45,6 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "Public")));
 
 app.use((req, res, next) => {
-  // console.log("Session data before handling request:", req.session);
   next();
 });
 
@@ -58,6 +56,7 @@ controllers.quesSubmitController =
   require("./controllers/judge.js").quesSubmitController;
 controllers.customJudge =
   require("./controllers/testCaseRunner.js").customJudge;
+controllers.checkLoginController = require("./controllers/login.js").checkLoginController;
 
 app.post("/addquestion", controllers.addquestion);
 app.use("/submit", controllers.quesSubmitController);
@@ -66,12 +65,15 @@ app.use("/testcase", controllers.customJudge);
 app.post("/signin", SignInController);
 app.post("/login", loginController);
 app.use("/logout", logOutController);
+app.get("/checklogin",checkLoginController);
 
-app.get("/checklogin", (req, res) => {
-  if (req.session.isLoggedIn) {
-    res.json({ isLoggedIn: true, username: req.session.user.user});
-  } else {
-    res.json({ isLoggedIn: false });
+app.get("/questionlist", async (req, res) => {
+  try {
+    const result = await questions.find();
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -85,21 +87,6 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/questionlist", async (req, res) => {
-  try {
-    const result = await questions.find();
-    res.json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.use("/", (req, res) => {
-  const filePath = path.join("public", "build", "index.html");
-  const absolutePath = path.resolve(__dirname, filePath);
-  res.sendFile(absolutePath);
-});
 
 mongoose
   .connect(

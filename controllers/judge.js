@@ -1,4 +1,5 @@
 const { questions } = require("../models/question");
+const { user } = require("../models/user"); 
 const cp = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -17,11 +18,11 @@ const languageToExtension = (lang) => {
 };
 
 exports.quesSubmitController = async (req, res) => {
-  const { user, name, lang, code } = req.body;
-  const filename = `${user}_${name}.${languageToExtension(lang)}`;
+  username = req.session.user.user;
+  const {name, lang, code } = req.body; 
+  const filename = `${username}_${name}.${languageToExtension(lang)}`;
   const quesName = name;
   let passed = 0;
-
   try {
     const result = await questions.findOne({ name: quesName });
     if (!result) {
@@ -34,18 +35,6 @@ exports.quesSubmitController = async (req, res) => {
       "../",
       "compiled_codes",
       filename.split(".")[0]
-    );
-    const testInput = path.join(
-      __dirname,
-      "../",
-      "test_input",
-      `${filename.split(".")[0]}.txt`
-    );
-    const testOutput = path.join(
-      __dirname,
-      "../",
-      "test_output",
-      `${filename.split(".")[0]}.txt`
     );
 
     fs.writeFileSync(inputPath, code);
@@ -73,12 +62,6 @@ exports.quesSubmitController = async (req, res) => {
           result.timeLimit
         );
         passed++;
-        if (passed === testCases.length) {
-          return res.json({
-            status: true,
-            message: `All  ${passed + 1} test cases passed`,
-          });
-        }
       } catch (testErr) {
         if (testErr.message === "TLE") {
           return res.json({
@@ -94,11 +77,21 @@ exports.quesSubmitController = async (req, res) => {
         });
       }
     }
+
+    if (passed === testCases.length) {
+      try {
+        await updateUserSolvedQuestions(username, quesName);
+        return res.json({
+          status: true,
+          message: `All ${passed} test cases passed.`,
+        });
+      } catch (updateErr) {
+        return true;
+      }
+    }
+
     return res.json({ status: false, message: "Some test cases failed" });
   } catch (error) {
-    if (error.message === "Question not found") {
-      return res.json({ status: false, message: "Question not found" });
-    }
     console.error("Error submitting question:", error);
     return res
       .status(500)
@@ -154,4 +147,19 @@ function runTestCase(outputPath, input, expectedOutput, timeLimit) {
     child.stdin.write(input);
     child.stdin.end();
   });
+}
+
+async function updateUserSolvedQuestions(username, quesName) {
+  const userData = await user.findOne({ user: username });
+  console.log("User data:", userData);
+  if (!userData) {
+    throw new Error("User not found");
+  }
+
+  if (!userData.solved_ques.includes(quesName)) {
+    userData.solved_ques.push(quesName);
+  }
+
+  await userData.save();
+  req.session.user = userData;
 }
