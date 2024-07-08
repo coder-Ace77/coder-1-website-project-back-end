@@ -1,5 +1,6 @@
 const { questions } = require("../models/question");
 const { user } = require("../models/user"); 
+const {submissions} = require("../models/submissions");
 const cp = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -123,6 +124,7 @@ exports.quesSubmitController = async (req, res) => {
       await compileCode(inputPath, outputPath, lang);
     } catch (compileErr) {
       console.error("Compilation error:", compileErr);
+      await saveSubmission(username, name, "Compilation error", code);
       return res.json({
         status: false,
         message: "Compilation error",
@@ -146,16 +148,17 @@ exports.quesSubmitController = async (req, res) => {
         );
       } catch (testErr) {
         allPassed = false;
+        let message;
         if (testErr.message === "TLE") {
-          return res.json({
-            status: false,
-            message: `Time Limit Exceeded on test case ${i + 1}`,
-          });
+          message = `Time Limit Exceeded on test case ${i + 1}`;
+        } else {
+          message = `Test case ${i + 1} failed`;
         }
-        console.error("Test case failed:", testErr);
+        console.error(message, testErr);
+        await saveSubmission(username, name, message, code);
         return res.json({
           status: false,
-          message: `Test case ${i + 1} failed`,
+          message: message,
           error: testErr.message,
         });
       }
@@ -165,11 +168,13 @@ exports.quesSubmitController = async (req, res) => {
       try {
         await updateUserSolvedQuestions(username, quesName);
         console.log("User solved questions updated");
+        await saveSubmission(username, name, "All test cases passed", code);
         return res.json({
           status: true,
           message: `All test cases passed.`,
         });
       } catch (updateErr) {
+        await saveSubmission(username, name, "Internal server error during update", code);
         return res.status(500).json({ status: false, message: "Internal server error" });
       }
     } else {
@@ -177,6 +182,7 @@ exports.quesSubmitController = async (req, res) => {
     }
   } catch (error) {
     console.error("Error submitting question:", error);
+    await saveSubmission(username, name, "Internal server error", code);
     return res
       .status(500)
       .json({ status: false, message: "Internal server error" });
@@ -186,12 +192,23 @@ exports.quesSubmitController = async (req, res) => {
 async function updateUserSolvedQuestions(username, quesName) {
   const userData = await user.findOne({ user: username });
   console.log("User data:", userData);
-  if (!userData) {
+  if (!userData){
     throw new Error("User not found");
   }
-
   if (!userData.solved_ques.includes(quesName)) {
     userData.solved_ques.push(quesName);
   }
   await userData.save();
 }
+
+async function saveSubmission(username, name, status, code) {
+  const sub = new submissions({
+    user: username,
+    name: name,
+    status: status,
+    code: code
+  });
+  await sub.save();
+  console.log("Saved submission");
+}
+

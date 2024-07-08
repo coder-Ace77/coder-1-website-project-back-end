@@ -57,8 +57,12 @@ controllers.quesSubmitController =
 controllers.customJudge =
   require("./controllers/testCaseRunner.js").customJudge;
 controllers.checkLoginController = require("./controllers/login.js").checkLoginController;
+controllers.getSubmissionsController = require("./controllers/getSubmissions.js").getSubmissionsController;
+controllers.submissionViewController = require("./controllers/getSubmissions.js").submissionViewController;
 
 app.post("/addquestion", controllers.addquestion);
+app.use("/submissions/:ques?", controllers.getSubmissionsController);
+app.use("/submission/view/:id", controllers.submissionViewController);
 app.use("/submit", controllers.quesSubmitController);
 app.use("/ques/:quesname", controllers.questionRenderController);
 app.use("/testcase", controllers.customJudge);
