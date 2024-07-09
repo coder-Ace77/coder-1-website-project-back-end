@@ -77,7 +77,8 @@ app.get("/checklogin",checkLoginController);
 
 app.get("/questionlist", async (req, res) => {
   try {
-    const result = await questions.find();
+    const result = (await questions.find()).map(question => question.name).filter(question => question!=null).reverse();
+    console.log(result);
     res.json(result);
   } catch (error) {
     console.error(error);
