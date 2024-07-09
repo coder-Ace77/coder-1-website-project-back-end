@@ -10,6 +10,7 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 const { loginController, logOutController, checkLoginController } = require("./controllers/login.js");
 const { SignInController } = require("./controllers/signIn.js");
 const { questions } = require("./models/question");
+const { constrainedMemory } = require("process");
 
 const app = express();
 app.use(express.json());
@@ -59,6 +60,7 @@ controllers.customJudge =
 controllers.checkLoginController = require("./controllers/login.js").checkLoginController;
 controllers.getSubmissionsController = require("./controllers/getSubmissions.js").getSubmissionsController;
 controllers.submissionViewController = require("./controllers/getSubmissions.js").submissionViewController;
+controllers.getTaggedDataController = require("./controllers/getTaggedData.js").getTaggedDataController;
 
 app.post("/addquestion", controllers.addquestion);
 app.use("/submissions/:ques?", controllers.getSubmissionsController);
@@ -66,10 +68,12 @@ app.use("/submission/view/:id", controllers.submissionViewController);
 app.use("/submit", controllers.quesSubmitController);
 app.use("/ques/:quesname", controllers.questionRenderController);
 app.use("/testcase", controllers.customJudge);
+app.use("/tagdata", controllers.getTaggedDataController);
 app.post("/signin", SignInController);
 app.post("/login", loginController);
 app.use("/logout", logOutController);
 app.get("/checklogin",checkLoginController);
+
 
 app.get("/questionlist", async (req, res) => {
   try {
