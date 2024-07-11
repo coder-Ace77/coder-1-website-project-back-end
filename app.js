@@ -83,8 +83,8 @@ app.get("/gettaglist", (req, res) => {
 
 app.get("/questionlist", async (req, res) => {
   try {
-    const result = await questions.find({}, { name: 1, tags: 1, _id: 0 });
-    console.log("API HIT", result);
+    const result = (await questions.find({}, { name: 1, tags: 1, _id: 0 })).reverse();
+    // console.log("API HIT", result);
     res.json(result);
   }catch (error){
     console.error(error);
