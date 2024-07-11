@@ -7,6 +7,7 @@ const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
 
+const tags = require("./support/tags.js");
 const { loginController, logOutController, checkLoginController } = require("./controllers/login.js");
 const { SignInController } = require("./controllers/signIn.js");
 const { questions } = require("./models/question");
@@ -73,18 +74,24 @@ app.post("/signin", SignInController);
 app.post("/login", loginController);
 app.use("/logout", logOutController);
 app.get("/checklogin",checkLoginController);
+app.get("/gettaglist", (req, res) => {
+  console.log(tags);
+  res.json({tags: tags});
+});
+  
 
 
 app.get("/questionlist", async (req, res) => {
   try {
-    const result = (await questions.find()).map(question => question.name).filter(question => question!=null).reverse();
-    console.log(result);
+    const result = await questions.find({}, { name: 1, tags: 1, _id: 0 });
+    console.log("API HIT", result);
     res.json(result);
-  } catch (error) {
+  }catch (error){
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 app.get("/", (req, res) => {
   console.log(req.session);
