@@ -1,51 +1,7 @@
-const { questions } = require("../models/question");
-const { user } = require("../models/user"); 
-const {submissions} = require("../models/submissions");
 const cp = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const exp = require("constants");
-
-const languageToExtension = (lang) => {
-  switch (lang) {
-    case "c++":
-      return "cpp";
-    case "python":
-      return "py";
-    default:
-      return "cpp";
-  }
-};
-
-const compileCode = (inputPath, outputPath, lang) => {
-  return new Promise((resolve, reject) => {
-    let compileCommand;
-    switch (lang) {
-      case 'C++':
-        compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
-        break;
-      case 'C':
-        compileCommand = `gcc "${inputPath}" -o "${outputPath}"`;
-        break;
-      case 'Python':
-      case 'Javascript':
-        resolve();
-        return;
-      default:
-        compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
-    }
-    
-    if (compileCommand) {
-      cp.exec(compileCommand, (err, stdout, stderr) => {
-        if (err) {
-          reject(new Error(stderr || stdout));
-        } else {
-          resolve();
-        }
-      });
-    }
-  });
-};
 
 const runTestCase = (inputPath, outputPath, input, expectedOutput, timeLimit, lang) => {
   return new Promise((resolve, reject) => {

@@ -75,7 +75,6 @@ app.post("/login", loginController);
 app.use("/logout", logOutController);
 app.get("/checklogin",checkLoginController);
 app.get("/gettaglist", (req, res) => {
-  console.log(tags);
   res.json({tags: tags});
 });
   
