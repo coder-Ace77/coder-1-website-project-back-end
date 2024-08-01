@@ -2,50 +2,45 @@ const cp = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const exp = require("constants");
+const execPromise = require("util").promisify(cp.exec);
 
-const compileCode = (inputPath, outputPath)=>{
-    return new Promise((resolve, reject)=>{
-        let compileCommand=`g++ "${inputPath}" -o "${outputPath}"`;
-        cp.exec(compileCommand, (err, stdout, stderr) => {
-            if (err)reject(new Error(stderr || stdout));
-            else resolve();
-        });
-    });
+const compileCode = (inputPath, outputPath) => {
+
 };
 
-const check=(output, expectedOutput)=>{
+const check = (output, expectedOutput) => {
     output = output.split("\n");
     expectedOutput = expectedOutput.split("\n");
-    for (let i = 0; i < expectedOutput.length; i++){
-        if (output[i].trim() !== expectedOutput[i].trim()){
-        return false;
+    for (let i = 0; i < expectedOutput.length; i++) {
+        if (output[i].trim() !== expectedOutput[i].trim()) {
+            return false;
         }
     }
-    for(let i=expectedOutput.length; i<output.length; i++){
-        if(output[i].trim() !== "")return false;
+    for (let i = expectedOutput.length; i < output.length; i++) {
+        if (output[i].trim() !== "") return false;
     }
     return true;
 }
 
-const runTestCase = (outfile,input,expectedOutput,timeLimit)=>{
+const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
     return new Promise((resolve, reject) => {
         let runCommand = outfile;
-        const child = cp.spawn(runCommand, { stdio: ["pipe", "pipe", "pipe"]});
+        const child = cp.spawn(runCommand, { stdio: ["pipe", "pipe", "pipe"] });
         let output = "";
         let timeout;
         child.stdout.on("data", (data) => {
             output += data.toString();
         });
 
-        child.on("error",(err)=>{
+        child.on("error", (err) => {
             reject(err);
         });
         child.on("exit", (code, signal) => {
             clearTimeout(timeout);
             if (code !== 0) {
                 reject(new Error(`Child process exited with code ${code}`));
-            } else{
-                if (check(output, expectedOutput)){
+            } else {
+                if (check(output, expectedOutput)) {
                     resolve("Test case passed");
                 } else {
                     reject(new Error(`Test case failed`));
@@ -62,7 +57,7 @@ const runTestCase = (outfile,input,expectedOutput,timeLimit)=>{
     });
 };
 
-const main = async(code,question,id)=>{
+const main = async (code, question, id) => {
     const filename = `${id}.cpp`;
     const inputPath = path.join(__dirname, "../", "codes", filename);
     const outputPath = path.join(
@@ -72,42 +67,49 @@ const main = async(code,question,id)=>{
         filename.split(".")[0]
     );
     fs.writeFileSync(inputPath, code);
+
+    let compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
+
     try {
-        await compileCode(inputPath, outputPath);
-    } catch (compileErr){
+        const { stdout, stderr } = await execPromise(compileCommand);
+    }
+    catch (error) {
         return {
             status: false,
             message: "Compilation error",
-            error: compileErr.message,
         };
     }
+
     const testCases = question.testCases;
-    let tot_cases = testCases.length , passed=0;
-    for (let i = 0; i < testCases.length; i++){
+    let tot_cases = testCases.length, passed = 0;
+    for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
-        runTestCase(
+
+        const x = await runTestCase(
             outputPath,
             testCase.input,
-            testCase.output,result.timeLimit).then(()=>{
-                passed++;
-                if(passed===tot_cases){
-                    return {status: true,message: `All ${passed} test cases passed.`}
-                }
-        }).catch(()=>{
+            testCase.output,
+            question.timeLimit
+        );
+        if (x == 'Test case passed') {
+            passed++;
+        } else {
             let message;
-            if (testErr.message === "TLE"){
+            if (x === "TLE") {
                 message = `Time Limit Exceeded on test case ${i + 1}`;
-            }else{
-                message = `Test case ${i + 1} failed`;
+            } else {
+                message = `Test case failed`;
             }
             return {
                 status: false,
                 message: message,
-                error: testErr.message,
             };
-        })      
+        }
+        if (passed >= tot_cases) {
+            return { status: true, message: `All ${passed} test cases passed.` }
+        }
     }
 }
 
-module.exports = {check,runTestCase,main};
+module.exports = { check, runTestCase, main };
 

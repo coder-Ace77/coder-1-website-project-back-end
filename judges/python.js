@@ -55,44 +55,39 @@ const runTestCase = (outfile,input,expectedOutput,timeLimit)=>{
     });
 };
 
-const main = async(code,question,id)=>{
+const main = async (code, question, id) => {
     const filename = `${id}.py`;
-    const filePath = path.join(__dirname, "../", "codes");
-    fs.writeFileSync(filePath,code);
-    try {
-        await compileCode(inputPath, outputPath);
-    } catch (compileErr){
-        return {
-            status: false,
-            message: "Compilation error",
-            error: compileErr.message,
-        };
-    }
+    const filePath = path.join(__dirname, "../", "codes", filename);
+    fs.writeFileSync(filePath, code);
+
     const testCases = question.testCases;
-    let tot_cases = testCases.length , passed=0;
+    let tot_cases = testCases.length, passed = 0;
     for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
-        runTestCase(
+
+        const x = await runTestCase(
             filePath,
             testCase.input,
-            testCase.output,result.timeLimit).then(()=>{
-                passed++;
-                if(passed===tot_cases){
-                    return {status: true,message: `All ${passed} test cases passed.`}
-                }
-        }).catch(()=>{
+            testCase.output,
+            question.timeLimit
+        );
+        if (x == 'Test case passed') {
+            passed++;
+        } else {
             let message;
-            if (testErr.message === "TLE"){
+            if (x === "TLE") {
                 message = `Time Limit Exceeded on test case ${i + 1}`;
-            }else{
-                message = `Test case ${i + 1} failed`;
+            } else {
+                message = `Test case failed`;
             }
             return {
                 status: false,
                 message: message,
-                error: testErr.message,
             };
-        })      
+        }
+        if (passed >= tot_cases) {
+            return { status: true, message: `All ${passed} test cases passed.` }
+        }
     }
 }
 
