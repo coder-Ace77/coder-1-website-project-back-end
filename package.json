@@ -21,6 +21,7 @@
   },
   "scripts": {
     "start": "nodemon app.js",
+    "prod":"node app.js",
     "test": "jest"
   },
   "author": "",
