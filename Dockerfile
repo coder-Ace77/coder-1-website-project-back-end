@@ -14,6 +14,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION | bash - && \
     apt-get install -y nodejs
 
 WORKDIR /usr/src/app
+
+RUN mkdir codes
+
+RUN mkdir compiled_codes
  
 COPY package*.json ./
 
