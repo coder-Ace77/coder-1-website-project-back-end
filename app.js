@@ -6,6 +6,10 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
+require('dotenv').config();
+
+const port = process.env.PORT || 5000;
+const dbUrl = process.env.DATABASE_URL;
 
 const tags = require("./support/tags.js");
 const { loginController, logOutController, checkLoginController } = require("./controllers/login.js");
@@ -14,11 +18,13 @@ const { questions } = require("./models/question");
 const { constrainedMemory } = require("process");
 
 const app = express();
+console.log("HI");
 app.use(express.json());
 const store = new MongoDBStore({
-  uri: "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide",
+  uri: dbUrl,
   collection: "sessions",
 });
+
 
 app.use(
   session({
@@ -83,7 +89,6 @@ app.get("/gettaglist", (req, res) => {
 app.get("/questionlist", async (req, res) => {
   try {
     const result = (await questions.find({}, { name: 1, tags: 1, _id: 0 })).reverse();
-    // console.log("API HIT", result);
     res.json(result);
   }catch (error){
     console.error(error);
@@ -93,24 +98,17 @@ app.get("/questionlist", async (req, res) => {
 
 
 app.get("/", (req, res) => {
-  console.log(req.session);
-  console.log(req.session.id);
-  console.log("API is working.");
-  res.send({
-    status: true,
-    msg: "API is working",
-  });
+  console.log("API hit");
+  res.json({msg:"Hi there"});
 });
 
 
 mongoose
-  .connect(
-    "mongodb+srv://Mohd_Adil:Mishrapur@onlineide.5fsk0pr.mongodb.net/ide"
-  )
+  .connect(dbUrl)
   .then(() => {
     console.log("Connected to MongoDB");
-    app.listen(5000, () => {
-      console.log("Server is running on port 5000");
+    app.listen(5000,'0.0.0.0',() => {
+      console.log(`Server is running on port ${port}`);
     });
   })
   .catch((err) => {

@@ -2,8 +2,10 @@ const {submissions} = require("../models/submissions");
 
 exports.getSubmissionsController = (req, res) => {
     const { ques } = req.params;
+    if(req.session.isLoggedIn === false || req.session.isLoggedIn === undefined){
+        return res.json({status:false , message: "Not loggedin" }); 
+    }
     const username = req.session.user.user;
-
     let query;
     if (ques) {
         query = submissions.find({ user: username, name: ques });
@@ -27,7 +29,6 @@ exports.submissionViewController = (req, res) => {
     const submissionId = req.params.id;
 
     submissions.findById(submissionId).then(submission => {
-        console.log(submission);
         if (!submission) {
             return res.status(404).json({ status: false, message: 'Submission not found' });
         }
