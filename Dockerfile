@@ -14,7 +14,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION | bash - && \
     apt-get install -y nodejs
 
 WORKDIR /usr/src/app
-
+ 
 COPY package*.json ./
 
 RUN npm install
