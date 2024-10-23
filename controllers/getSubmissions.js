@@ -5,6 +5,7 @@ exports.getSubmissionsController = (req, res) => {
     if(req.session.isLoggedIn === false || req.session.isLoggedIn === undefined){
         return res.json({status:false , message: "Not loggedin" }); 
     }
+
     const username = req.session.user.user;
     let query;
     if (ques) {

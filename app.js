@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const cors = require("cors");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const { user } = require("./models/user");
+const jwt = require("jsonwebtoken");
 require('dotenv').config();
 
 const port = process.env.PORT || 5000;
@@ -46,10 +48,6 @@ app.use(
   })
 );
 
-store.on("error", function (error) {
-  console.log(error);
-});
-
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "Public")));
 
@@ -70,28 +68,53 @@ controllers.getSubmissionsController = require("./controllers/getSubmissions.js"
 controllers.submissionViewController = require("./controllers/getSubmissions.js").submissionViewController;
 controllers.getTaggedDataController = require("./controllers/getTaggedData.js").getTaggedDataController;
 
+const authMiddleware = async (req, res, next) => {
+  const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
+  if (!token) return res.status(500).json({ message: "Token not found!" });
+  try {
+    const payload = jwt.verify(token, "SECRET");
+    const findUser = await user.findOne({ user: payload.username });
+
+    if (!findUser) {
+      return res.status(500).json({ message: "User not found!" });
+    }
+    req.session.user = findUser;
+    req.session.isLoggedIn = true;
+
+    console.log("USER set" , req.session.user.user);
+
+    next();
+  } catch(err) {
+    console.log(err);
+    res.status(500).json({ message: "Auth failed!" });
+  }
+};
+
+app.get("/check-middleware", [authMiddleware], (req, res, next) => {
+  res.json("Middleware passed");
+});
+
+
 app.post("/addquestion", controllers.addquestion);
-app.use("/submissions/:ques?", controllers.getSubmissionsController);
-app.use("/submission/view/:id", controllers.submissionViewController);
-app.use("/submit", controllers.quesSubmitController);
-app.use("/ques/:quesname", controllers.questionRenderController);
-app.use("/testcase", controllers.customJudge);
-app.use("/tagdata", controllers.getTaggedDataController);
+app.use("/submissions/:ques?",[authMiddleware],controllers.getSubmissionsController);
+app.use("/submission/view/:id",controllers.submissionViewController);
+app.use("/submit",[authMiddleware],controllers.quesSubmitController);
+app.use("/ques/:quesname",[authMiddleware],controllers.questionRenderController);
+app.use("/testcase",[authMiddleware],controllers.customJudge);
+app.use("/tagdata",[authMiddleware],controllers.getTaggedDataController);
 app.post("/signin", SignInController);
 app.post("/login", loginController);
-app.use("/logout", logOutController);
-app.get("/checklogin",checkLoginController);
+app.use("/logout",[authMiddleware],logOutController);
+app.get("/checklogin",[authMiddleware],checkLoginController);
 app.get("/gettaglist", (req, res) => {
-  res.json({tags: tags});
+  res.json({ tags: tags });
 });
-  
-
 
 app.get("/questionlist", async (req, res) => {
   try {
     const result = (await questions.find({}, { name: 1, tags: 1, _id: 0 })).reverse();
     res.json(result);
-  }catch (error){
+  } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }
@@ -100,7 +123,7 @@ app.get("/questionlist", async (req, res) => {
 
 app.get("/", (req, res) => {
   console.log("API hit");
-  res.json({msg:"Hi there"});
+  res.json({ msg: "Hi there" });
 });
 
 
@@ -108,7 +131,7 @@ mongoose
   .connect(dbUrl)
   .then(() => {
     console.log("Connected to MongoDB");
-    app.listen(port,() => {
+    app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
     });
   })

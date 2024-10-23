@@ -1,13 +1,15 @@
 const { user } = require("../models/user.js");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+
 
 exports.loginController = (req, res) => {
   const id = req.body.username;
   const pass = req.body.password;
-
-  user
-    .findOne({ user: id })
+  user.findOne({ user: id })
     .then((result) => {
+
       if (!result) {
         return res.json({ code: 404, message: "User not exist" });
       }
@@ -16,11 +18,9 @@ exports.loginController = (req, res) => {
         .compare(pass, result.password)
         .then((isMatch) => {
           if (isMatch) {
-            if (!req.session.isLoggedIn) {
-              req.session.isLoggedIn = true;
-            }
-            req.session.user = result;
-            res.json({ code: 200, message: "Successfully logged in." });
+            const findUser = result;
+            const token = jwt.sign({ id: findUser._id, username: findUser.user },"SECRET");
+            res.json({ code: 200, message: "Successfully logged in." , token:token});
           } else {
             res.json({ code: 404, message: "Wrong ID or password." });
           }
@@ -34,6 +34,7 @@ exports.loginController = (req, res) => {
         });
     })
     .catch((err) => {
+      console.log(err);
       res.json({ code: 500, message: "Error finding user", error: err });
     });
 };
@@ -52,6 +53,7 @@ exports.logOutController = (req, res) => {
 };
 
 exports.checkLoginController = (req, res) => {
+  console.log("Hit");
   if (req.session.isLoggedIn) {
     res.json({ isLoggedIn: true, username: req.session.user.user , user: req.session.user});
   } else {
