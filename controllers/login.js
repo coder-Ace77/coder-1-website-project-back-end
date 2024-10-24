@@ -3,10 +3,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 
-
 exports.loginController = (req, res) => {
   const id = req.body.username;
   const pass = req.body.password;
+  
   user.findOne({ user: id })
     .then((result) => {
 
