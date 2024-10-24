@@ -70,19 +70,19 @@ controllers.runSampleTests = require("./controllers/sampleController.js").sample
 
 const authMiddleware = async (req, res, next) => {
   const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
-  if (!token) return res.status(500).json({ message: "Token not found!" });
+  if (!token) return res.json({ message: "Token not found!" });
   try {
     const payload = jwt.verify(token, "SECRET");
     const findUser = await user.findOne({ user: payload.username });
 
     if (!findUser) {
-      return res.status(500).json({ message: "User not found!" });
+      return res.json({ message: "User not found!" });
     }
     req.session.user = findUser;
     req.session.isLoggedIn = true;
     next();
   } catch(err) {
-    res.status(500).json({ message: "Auth failed!" });
+    res.json({ message: "Auth failed!" });
   }
 };
 
@@ -95,7 +95,7 @@ app.post("/addquestion", controllers.addquestion);
 app.use("/submissions/:ques?",[authMiddleware],controllers.getSubmissionsController);
 app.use("/submission/view/:id",controllers.submissionViewController);
 app.use("/submit",[authMiddleware],controllers.quesSubmitController);
-app.use("/ques/:quesname",[authMiddleware],controllers.questionRenderController);
+app.use("/ques/:quesname",controllers.questionRenderController);
 app.use("/testcase",[authMiddleware],controllers.customJudge);
 app.use("/tagdata",[authMiddleware],controllers.getTaggedDataController);
 app.post("/signin", SignInController);
