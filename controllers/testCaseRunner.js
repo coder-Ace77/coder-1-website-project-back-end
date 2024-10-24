@@ -78,10 +78,5 @@ function executeCode(executablePath, input, timeLimit) {
 }
 function deleteFile(filePath) {
     fs.unlink(filePath, (err) => {
-        if (err) {
-            console.error('Error deleting file:', err);
-        } else {
-            console.log('File deleted successfully:', filePath);
-        }
     });
 }

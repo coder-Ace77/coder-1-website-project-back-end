@@ -31,24 +31,24 @@ const runTestCase = (outfile,input,expectedOutput,timeLimit)=>{
         });
 
         child.on("error",(err)=>{
-            reject("Test case failed");
+            reject(100);
         });
         child.on("exit", (code, signal) => {
             clearTimeout(timeout);
             if (code !== 0) {
-                reject(new Error("Test case failed"));
+                reject(new Error(100));
             } else{
                 if (check(output, expectedOutput)){
                     resolve("Test case passed");
                 } else {
-                    reject(new Error(`Test case failed`));
+                    reject(new Error(200));
                 }
             }
         });
 
         timeout = setTimeout(() => {
             child.kill("SIGTERM");
-            reject(new Error(`TLE`));
+            reject(new Error(300));
         }, timeLimit * 1000);
         child.stdin.write(input);
         child.stdin.end();
@@ -65,29 +65,56 @@ const main = async (code, question, id) => {
     for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
 
-        const x = await runTestCase(
-            filePath,
-            testCase.input,
-            testCase.output,
-            question.timeLimit
-        );
-        if (x == 'Test case passed') {
-            passed++;
-        } else {
-            let message;
-            if (x === "TLE") {
-                message = `Time Limit Exceeded on test case ${i + 1}`;
+        try{
+
+            const x = await runTestCase(
+                filePath,
+                testCase.input,
+                testCase.output,
+                question.timeLimit
+            );
+            if (x == 'Test case passed'){
+                passed++;
             } else {
-                message = `Test case failed`;
+                let message;
+                if (x === "TLE") {
+                    message = `TLE ${i + 1}`;
+                    verdict =  `Time limit exceeded on test case ${i+1}`;
+                } else {
+                    message = `Wrong ans`;
+                    verdict =  `Wrong answer on test case ${i+1}`;
+                }
+                return {
+                    status: false,
+                    message: message,
+                    verdict:verdict
+                };
             }
+            if (passed >= tot_cases) {
+                return {status:true, message: `Accepted` , verdict:`${passed}/${tot_cases} passed.`}
+            }
+        }catch(err){
+            let message;
+            
+
+            if (err == "Error: 300") {
+                message = `TLE`;
+                verdict =  `Time limit exceeded on test case ${i+1}`;
+            } else if(err=="Error: 200"){
+                message = `Wrong ans`;
+                verdict =  `Wrong answer on test case ${i+1}`;
+            }else{
+                message = "Run time error";
+                verdict = `Run time error on test case ${i+1}`;
+            }
+
             return {
                 status: false,
                 message: message,
+                verdict:verdict
             };
         }
-        if (passed >= tot_cases) {
-            return { status: true, message: `All ${passed} test cases passed.` }
-        }
+        
     }
 }
 

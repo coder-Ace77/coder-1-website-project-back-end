@@ -49,15 +49,17 @@ exports.quesSubmitController = async (req, res) => {
         status = await runners.cpp(code, questionData, ID);
     }
 
-    if (status.status) {
+    if (status.status){
       await updateUserSolvedQuestions(username, quesName);
+      await saveSubmission(username, quesName, status.message, code , status.verdict);
+      return res.status(200).json({status:true,  message: status.message});
+    }else{
+      await saveSubmission(username, quesName, status.message, code, status.verdict);
+      return res.status(200).json({status:true,  message: status.message });
     }
-
-    await saveSubmission(username, quesName, status.message, code , status.verdict);
-    return res.status(200).json({status:true,  message: status.message });
-  } catch (err) {
+  } catch (err){
     await saveSubmission(username, quesName, err.message, code);
-    return res.status(500).json({status:false ,  message: "Internal Server Error" });
+    return res.json({status:false ,  message: err.message});
   }
 };
 
@@ -72,13 +74,13 @@ async function updateUserSolvedQuestions(username, quesName) {
   await userData.save();
 }
 
-async function saveSubmission(username, name, status, code,message) {
+async function saveSubmission(username, name, status, code,verdict) {
   const sub = new submissions({
     user: username,
     name: name,
     status: status,
     code: code,
-    message:message
+    message:verdict
   });
   await sub.save();
 }

@@ -42,7 +42,7 @@ const main = async (code, input, id) => {
     const filePath = path.join(__dirname, "../", "codes", filename);
     fs.writeFileSync(filePath, code);
     try {
-        const x = await runTestCase(outputPath, input);
+        const x = await runTestCase(filePath, input);
         return {
           status: true,
           output: x,

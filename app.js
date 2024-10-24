@@ -20,7 +20,6 @@ const { questions } = require("./models/question");
 const { constrainedMemory } = require("process");
 
 const app = express();
-console.log("HI");
 app.use(express.json());
 const store = new MongoDBStore({
   uri: dbUrl,
@@ -81,12 +80,8 @@ const authMiddleware = async (req, res, next) => {
     }
     req.session.user = findUser;
     req.session.isLoggedIn = true;
-
-    console.log("USER set" , req.session.user.user);
-
     next();
   } catch(err) {
-    console.log(err);
     res.status(500).json({ message: "Auth failed!" });
   }
 };

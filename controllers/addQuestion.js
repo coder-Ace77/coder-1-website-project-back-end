@@ -14,14 +14,12 @@ const preProcessing = (new_ques) => {
 };
 
 exports.addquestion = (req, res) => {
-  console.log(req.body);
   var new_ques = new questions({ ...req.body, submissionCount: 0 });
   new_ques = preProcessing(new_ques);
   new_ques
     .save()
     .then((result) => {
       res.json({ message: "Question added", success: true, code: 200 });
-      console.log("Question added");
     })
     .catch((err) => {
       res.json({ message: err, success: false, code: 500 });
