@@ -7,7 +7,6 @@ exports.questionRenderController = (req, res) => {
     { testCases: 0 }
   )
     .then((result) => {
-      // console.log("Result:", result);
       res.json(result);
     })
     .catch((err) => {
