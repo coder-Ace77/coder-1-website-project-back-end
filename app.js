@@ -67,6 +67,7 @@ controllers.checkLoginController = require("./controllers/login.js").checkLoginC
 controllers.getSubmissionsController = require("./controllers/getSubmissions.js").getSubmissionsController;
 controllers.submissionViewController = require("./controllers/getSubmissions.js").submissionViewController;
 controllers.getTaggedDataController = require("./controllers/getTaggedData.js").getTaggedDataController;
+controllers.runSampleTests = require("./controllers/sampleController.js").sampleTests;
 
 const authMiddleware = async (req, res, next) => {
   const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
@@ -106,6 +107,7 @@ app.post("/signin", SignInController);
 app.post("/login", loginController);
 app.use("/logout",[authMiddleware],logOutController);
 app.get("/checklogin",[authMiddleware],checkLoginController);
+app.post("/runsample",[authMiddleware],controllers.runSampleTests);
 app.get("/gettaglist", (req, res) => {
   res.json({ tags: tags });
 });
