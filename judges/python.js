@@ -19,7 +19,7 @@ const check = (output, expectedOutput) => {
 const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(outfile)) {
-            reject(new Error("File not found"));
+            reject({ code: 100, totalTime: 0 }); 
         }
         const runCommand = `python3 ${outfile}`;
         const child = cp.spawn(runCommand, { stdio: ["pipe", "pipe", "pipe"], shell: true });
@@ -32,26 +32,26 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         });
 
         child.on("error", (err) => {
-            reject(new Error("Child process error"));
+            reject({ code: 100, totalTime: (Date.now() - startTime) / 1000 }); 
         });
 
         child.on("exit", (code) => {
             clearTimeout(timeout);
-            const totalTime = (Date.now() - startTime) / 1000; // Convert to seconds
+            const totalTime = (Date.now() - startTime) / 1000;
             if (code !== 0) {
-                reject(new Error("Runtime error"));
+                reject({ code: 300, totalTime });
             } else {
                 if (check(output, expectedOutput)) {
-                    resolve({ status: "Test case passed", totalTime });
+                    resolve({ result: "Test case passed", totalTime });
                 } else {
-                    reject(new Error("Wrong answer"));
+                    reject({ code: 200, totalTime }); 
                 }
             }
         });
 
         timeout = setTimeout(() => {
             child.kill("SIGTERM");
-            reject(new Error("Time limit exceeded"));
+            reject({ code: 400, totalTime: (Date.now() - startTime) / 1000 });
         }, timeLimit * 1000);
 
         child.stdin.write(input);
@@ -67,32 +67,34 @@ const main = async (code, question, id) => {
     const testCases = question.testCases;
     const totalCases = testCases.length;
     let passed = 0;
+    let totalTime = 0;
 
     for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
 
         try {
-            const result = await runTestCase(
+            const { result, totalTime: timeTaken } = await runTestCase(
                 filePath,
                 testCase.input,
                 testCase.output,
                 question.timeLimit
             );
-            if (result.status === 'Test case passed') {
+            totalTime = Math.max(totalTime, timeTaken);
+            if (result === "Test case passed") {
                 passed++;
             }
             if (passed >= totalCases) {
-                return { status: true, message: `Accepted`, verdict: `${passed}/${totalCases} passed.` };
+                return { status: true, message: "Accepted", verdict: `${passed}/${totalCases} passed.`, totalTime };
             }
         } catch (err) {
             let message;
             let verdict;
-            
-            if (err.message === "Time limit exceeded") {
-                message = `TLE`;
+
+            if (err.code === 400) {
+                message = "TLE";
                 verdict = `Time limit exceeded on test case ${i + 1}`;
-            } else if (err.message === "Wrong answer") {
-                message = `Wrong ans`;
+            } else if (err.code === 200) {
+                message = "Wrong ans";
                 verdict = `Wrong answer on test case ${i + 1}`;
             } else {
                 message = "Run time error";
@@ -102,10 +104,13 @@ const main = async (code, question, id) => {
             return {
                 status: false,
                 message: message,
-                verdict: verdict
+                verdict: verdict,
+                totalTime
             };
         }
     }
+
+    return { status: true, message: "All test cases executed", verdict: `${passed}/${totalCases} passed.`, totalTime };
 };
 
 module.exports = { check, runTestCase, main };

@@ -24,7 +24,6 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         let output = "";
         let timeout;
         let startTime = Date.now();
-
         child.stdout.on("data", (data) => {
             output += data.toString();
         });
@@ -35,13 +34,13 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         child.on("exit", (code, signal) => {
             clearTimeout(timeout);
             const timeTaken = (Date.now() - startTime) / 1000; 
-            if (code !== 0) {
+            if (code !== 0){
                 reject({ code: 100, totalTime:timeTaken });
             } else {
                 if (check(output, expectedOutput)) {
                     resolve({ result: "Test case passed", timeTaken });
                 } else {
-                    reject({ code: 200, totalTime });
+                    reject({ code: 200, totalTime:timeTaken });
                 }
             }
         });
@@ -49,7 +48,7 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         timeout = setTimeout(() => {
             child.kill("SIGTERM");
             reject({ code: 300, totalTime: (Date.now() - startTime) / 1000 });
-        }, timeLimit * 1000);
+        }, timeLimit * 1000*2);
         child.stdin.write(input);
         child.stdin.end();
     });
@@ -71,12 +70,12 @@ const main = async (code, question, id) => {
 
     try {
         const { stdout, stderr } = await execPromise(compileCommand);
-    } catch (error) {
+    } catch(error){
         return {
             status: false,
             message: "Compilation error",
             verdict: "",
-            totalTime: (totalTime += (Date.now() - startTime) / 1000)
+            totalTime: 0
         };
     }
 
@@ -92,7 +91,7 @@ const main = async (code, question, id) => {
                 testCase.output,
                 question.timeLimit
             );
-            totalTime += timeTaken;
+            totalTime = Math.max(timeTaken,totalTime);
             if (result === 'Test case passed') {
                 passed++;
             }
