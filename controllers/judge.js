@@ -49,7 +49,6 @@ exports.quesSubmitController = async (req, res) => {
 
         await saveSubmission(username, quesName, status.message, code, status.verdict, status.totalTime);
 
-        // Update submission count for the question
         await updateSubmissionCount(quesName);
         
         if (status.status) {

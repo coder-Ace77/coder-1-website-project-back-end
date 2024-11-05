@@ -34,9 +34,9 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         });
         child.on("exit", (code, signal) => {
             clearTimeout(timeout);
-            const timeTaken = (Date.now() - startTime) / 1000; // time in seconds
+            const timeTaken = (Date.now() - startTime) / 1000; 
             if (code !== 0) {
-                reject({ code: 100, totalTime });
+                reject({ code: 100, totalTime:timeTaken });
             } else {
                 if (check(output, expectedOutput)) {
                     resolve({ result: "Test case passed", timeTaken });
