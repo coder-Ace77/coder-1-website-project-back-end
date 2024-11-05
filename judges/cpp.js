@@ -1,8 +1,6 @@
 const cp = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const exp = require("constants");
-const { stderr } = require("process");
 const execPromise = require("util").promisify(cp.exec);
 
 const check = (output, expectedOutput) => {
@@ -25,29 +23,32 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         const child = cp.spawn(runCommand, { stdio: ["pipe", "pipe", "pipe"] });
         let output = "";
         let timeout;
+        let startTime = Date.now();
+
         child.stdout.on("data", (data) => {
             output += data.toString();
         });
 
         child.on("error", (err) => {
-            reject(100);
+            reject({ code: 100, totalTime: (Date.now() - startTime) / 1000 });
         });
         child.on("exit", (code, signal) => {
             clearTimeout(timeout);
+            const timeTaken = (Date.now() - startTime) / 1000; // time in seconds
             if (code !== 0) {
-                reject(new Error(100));
+                reject({ code: 100, totalTime });
             } else {
                 if (check(output, expectedOutput)) {
-                    resolve("Test case passed");
+                    resolve({ result: "Test case passed", timeTaken });
                 } else {
-                    reject(new Error(200));
+                    reject({ code: 200, totalTime });
                 }
             }
         });
 
         timeout = setTimeout(() => {
             child.kill("SIGTERM");
-            reject(new Error(300));
+            reject({ code: 300, totalTime: (Date.now() - startTime) / 1000 });
         }, timeLimit * 1000);
         child.stdin.write(input);
         child.stdin.end();
@@ -66,57 +67,62 @@ const main = async (code, question, id) => {
     fs.writeFileSync(inputPath, code);
 
     let compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
+    let totalTime = 0;
 
     try {
-        const {stdout,stderr} = await execPromise(compileCommand);
-    }
-    catch (error) {
+        const { stdout, stderr } = await execPromise(compileCommand);
+    } catch (error) {
         return {
             status: false,
             message: "Compilation error",
-            verdict: ""
+            verdict: "",
+            totalTime: (totalTime += (Date.now() - startTime) / 1000)
         };
     }
 
     const testCases = question.testCases;
     let tot_cases = testCases.length, passed = 0;
+
     for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
-        try{
-            const x = await runTestCase(
+        try {
+            const { result, timeTaken } = await runTestCase(
                 outputPath,
                 testCase.input,
                 testCase.output,
                 question.timeLimit
             );
-            if (x == 'Test case passed') {
+            totalTime += timeTaken;
+            if (result === 'Test case passed') {
                 passed++;
             }
             if (passed >= tot_cases) {
-                return {status:true, message: `Accepted` , verdict:`${passed}/${tot_cases} passed.`}
+                return { status: true, message: `Accepted`, verdict: `${passed}/${tot_cases} passed.`, totalTime };
             }
-
-        }catch(err){
+        } catch (err) {
             let message;
-            if (err == "Error: 300") {
+            let verdict;
+            if (err.code === 300) {
                 message = `TLE`;
-                verdict =  `Time limit exceeded on test case ${i+1}`;
-            } else if(err=="Error: 200"){
+                verdict = `Time limit exceeded on test case ${i + 1}`;
+            } else if (err.code === 200) {
                 message = `Wrong ans`;
-                verdict =  `Wrong answer on test case ${i+1}`;
-            }else{
+                verdict = `Wrong answer on test case ${i + 1}`;
+            } else {
                 message = "Run time error";
-                verdict = `Run time error on test case ${i+1}`;
+                verdict = `Run time error on test case ${i + 1}`;
             }
 
             return {
                 status: false,
                 message: message,
-                verdict:verdict
+                verdict: verdict,
+                totalTime
             };
         }
-        
     }
-}
-module.exports = { check, runTestCase, main };
 
+    return { status: true, message: "All test cases executed", verdict: `${passed}/${tot_cases} passed.`, totalTime };
+}
+
+module.exports = { check, runTestCase, main };

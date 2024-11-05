@@ -1,55 +1,59 @@
 const cp = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const exp = require("constants");
 
-const check=(output, expectedOutput)=>{
+const check = (output, expectedOutput) => {
     output = output.split("\n");
     expectedOutput = expectedOutput.split("\n");
-    for (let i = 0; i < expectedOutput.length; i++){
-        if (output[i].trim() !== expectedOutput[i].trim()){
-        return false;
+    for (let i = 0; i < expectedOutput.length; i++) {
+        if (output[i].trim() !== expectedOutput[i].trim()) {
+            return false;
         }
     }
-    for(let i=expectedOutput.length; i<output.length; i++){
-        if(output[i].trim() !== "")return false;
+    for (let i = expectedOutput.length; i < output.length; i++) {
+        if (output[i].trim() !== "") return false;
     }
     return true;
-}
+};
 
-const runTestCase = (outfile,input,expectedOutput,timeLimit)=>{
+const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
     return new Promise((resolve, reject) => {
-        if(!fs.existsSync(outfile)){
+        if (!fs.existsSync(outfile)) {
             reject(new Error("File not found"));
         }
-        let runCommand = `python3 ${outfile}`;
-        const child = cp.spawn(runCommand,{stdio:["pipe", "pipe", "pipe"],shell:true});
+        const runCommand = `python3 ${outfile}`;
+        const child = cp.spawn(runCommand, { stdio: ["pipe", "pipe", "pipe"], shell: true });
         let output = "";
         let timeout;
+        let startTime = Date.now();
+
         child.stdout.on("data", (data) => {
             output += data.toString();
         });
 
-        child.on("error",(err)=>{
-            reject(100);
+        child.on("error", (err) => {
+            reject(new Error("Child process error"));
         });
-        child.on("exit", (code, signal) => {
+
+        child.on("exit", (code) => {
             clearTimeout(timeout);
+            const totalTime = (Date.now() - startTime) / 1000; // Convert to seconds
             if (code !== 0) {
-                reject(new Error(100));
-            } else{
-                if (check(output, expectedOutput)){
-                    resolve("Test case passed");
+                reject(new Error("Runtime error"));
+            } else {
+                if (check(output, expectedOutput)) {
+                    resolve({ status: "Test case passed", totalTime });
                 } else {
-                    reject(new Error(200));
+                    reject(new Error("Wrong answer"));
                 }
             }
         });
 
         timeout = setTimeout(() => {
             child.kill("SIGTERM");
-            reject(new Error(300));
+            reject(new Error("Time limit exceeded"));
         }, timeLimit * 1000);
+
         child.stdin.write(input);
         child.stdin.end();
     });
@@ -61,62 +65,47 @@ const main = async (code, question, id) => {
     fs.writeFileSync(filePath, code);
 
     const testCases = question.testCases;
-    let tot_cases = testCases.length, passed = 0;
+    const totalCases = testCases.length;
+    let passed = 0;
+
     for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
 
-        try{
-
-            const x = await runTestCase(
+        try {
+            const result = await runTestCase(
                 filePath,
                 testCase.input,
                 testCase.output,
                 question.timeLimit
             );
-            if (x == 'Test case passed'){
+            if (result.status === 'Test case passed') {
                 passed++;
-            } else {
-                let message;
-                if (x === "TLE") {
-                    message = `TLE ${i + 1}`;
-                    verdict =  `Time limit exceeded on test case ${i+1}`;
-                } else {
-                    message = `Wrong ans`;
-                    verdict =  `Wrong answer on test case ${i+1}`;
-                }
-                return {
-                    status: false,
-                    message: message,
-                    verdict:verdict
-                };
             }
-            if (passed >= tot_cases) {
-                return {status:true, message: `Accepted` , verdict:`${passed}/${tot_cases} passed.`}
+            if (passed >= totalCases) {
+                return { status: true, message: `Accepted`, verdict: `${passed}/${totalCases} passed.` };
             }
-        }catch(err){
+        } catch (err) {
             let message;
+            let verdict;
             
-
-            if (err == "Error: 300") {
+            if (err.message === "Time limit exceeded") {
                 message = `TLE`;
-                verdict =  `Time limit exceeded on test case ${i+1}`;
-            } else if(err=="Error: 200"){
+                verdict = `Time limit exceeded on test case ${i + 1}`;
+            } else if (err.message === "Wrong answer") {
                 message = `Wrong ans`;
-                verdict =  `Wrong answer on test case ${i+1}`;
-            }else{
+                verdict = `Wrong answer on test case ${i + 1}`;
+            } else {
                 message = "Run time error";
-                verdict = `Run time error on test case ${i+1}`;
+                verdict = `Run time error on test case ${i + 1}`;
             }
 
             return {
                 status: false,
                 message: message,
-                verdict:verdict
+                verdict: verdict
             };
         }
-        
     }
-}
+};
 
-module.exports = {check,runTestCase,main};
-
+module.exports = { check, runTestCase, main };
