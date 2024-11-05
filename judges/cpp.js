@@ -29,11 +29,11 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         });
 
         child.on("error", (err) => {
-            reject({ code: 100, totalTime: (Date.now() - startTime) / 1000 });
+            reject({ code: 100, totalTime: (Date.now() - startTime) });
         });
         child.on("exit", (code, signal) => {
             clearTimeout(timeout);
-            const timeTaken = (Date.now() - startTime) / 1000; 
+            const timeTaken = (Date.now() - startTime); 
             if (code !== 0){
                 reject({ code: 100, totalTime:timeTaken });
             } else {
@@ -47,8 +47,8 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
 
         timeout = setTimeout(() => {
             child.kill("SIGTERM");
-            reject({ code: 300, totalTime: (Date.now() - startTime) / 1000 });
-        }, timeLimit * 1000*2);
+            reject({ code: 300, totalTime: (Date.now() - startTime)});
+        }, timeLimit*1000*2);
         child.stdin.write(input);
         child.stdin.end();
     });
@@ -101,6 +101,9 @@ const main = async (code, question, id) => {
         } catch (err) {
             let message;
             let verdict;
+
+            totalTime = Math.max(err.totalTime,totalTime);
+
             if (err.code === 300) {
                 message = `TLE`;
                 verdict = `Time limit exceeded on test case ${i + 1}`;

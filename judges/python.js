@@ -26,33 +26,32 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
         let output = "";
         let timeout;
         let startTime = Date.now();
-
         child.stdout.on("data", (data) => {
             output += data.toString();
         });
 
         child.on("error", (err) => {
-            reject({ code: 100, totalTime: (Date.now() - startTime) / 1000 }); 
+            reject({ code: 100, totalTime:(Date.now()-startTime)}); 
         });
 
         child.on("exit", (code) => {
             clearTimeout(timeout);
-            const totalTime = (Date.now() - startTime) / 1000;
+            const timeTaken = (Date.now() - startTime);
             if (code !== 0) {
-                reject({ code: 300, totalTime });
+                reject({ code: 300, timeTaken });
             } else {
                 if (check(output, expectedOutput)) {
-                    resolve({ result: "Test case passed", totalTime });
+                    resolve({ result: "Test case passed", timeTaken });
                 } else {
-                    reject({ code: 200, totalTime }); 
+                    reject({ code: 200, totalTime: timeTaken }); 
                 }
             }
         });
 
         timeout = setTimeout(() => {
             child.kill("SIGTERM");
-            reject({ code: 400, totalTime: (Date.now() - startTime) / 1000 });
-        }, timeLimit * 1000);
+            reject({ code: 400, totalTime: (Date.now() - startTime)});
+        }, timeLimit * 1000*10);
 
         child.stdin.write(input);
         child.stdin.end();
@@ -73,7 +72,7 @@ const main = async (code, question, id) => {
         const testCase = testCases[i];
 
         try {
-            const { result, totalTime: timeTaken } = await runTestCase(
+            const { result, timeTaken} = await runTestCase(
                 filePath,
                 testCase.input,
                 testCase.output,
@@ -89,6 +88,7 @@ const main = async (code, question, id) => {
         } catch (err) {
             let message;
             let verdict;
+            totalTime = Math.max(totalTime,err.totalTime);            
 
             if (err.code === 400) {
                 message = "TLE";

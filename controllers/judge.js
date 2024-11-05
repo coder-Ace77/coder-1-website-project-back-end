@@ -75,7 +75,7 @@ async function updateUserSolvedQuestions(username, quesName) {
 }
 
 async function saveSubmission(username, name, status, code, verdict, time_taken) {
-    time_taken = time_taken ? `${time_taken}ms` : "0ms"; // Ensure time_taken is a string with ms
+    time_taken = time_taken ? `${time_taken} ms` : "0 ms"; 
     const sub = new submissions({
         user: username,
         name: name,
