@@ -41,6 +41,7 @@ const runTestCase = (outfile, input) => {
 const main = async (code, input, id) => {
     const filename = `${id}.cpp`;
     const inputPath = path.join(__dirname, "../", "codes", filename);
+    const precompiled = path.join(__dirname,"../","precompiled","pch.h");
     const outputPath = path.join(
         __dirname,
         "../",
@@ -48,7 +49,8 @@ const main = async (code, input, id) => {
         filename.split(".")[0]
     );
     fs.writeFileSync(inputPath, code);
-    let compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
+    // let compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
+    let compileCommand = `g++ -std=c++17 ${inputPath} -include ${precompiled} -o ${outputPath}`;
 
     try {
         const {stdout,stderr} = await execPromise(compileCommand);

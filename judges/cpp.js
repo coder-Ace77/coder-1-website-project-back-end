@@ -57,6 +57,7 @@ const runTestCase = (outfile, input, expectedOutput, timeLimit) => {
 const main = async (code, question, id) => {
     const filename = `${id}.cpp`;
     const inputPath = path.join(__dirname, "../", "codes", filename);
+    const precompiled = path.join(__dirname,"../","precompiled","pch.h");
     const outputPath = path.join(
         __dirname,
         "../",
@@ -65,7 +66,8 @@ const main = async (code, question, id) => {
     );
     fs.writeFileSync(inputPath, code);
 
-    let compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
+    // let compileCommand = `g++ "${inputPath}" -o "${outputPath}"`;
+    let compileCommand = `g++ -std=c++17 ${inputPath} -include ${precompiled} -o ${outputPath}`;
     let totalTime = 0;
 
     try {
